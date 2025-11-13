@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -8,18 +8,15 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { ArrowLeft, Camera, CheckCircle2, Loader2 } from "lucide-react";
+import { ArrowLeft, CheckCircle2, Loader2 } from "lucide-react";
 import { QRCodeDisplay } from "@/components/QRCodeDisplay";
 
 const Enrollment = () => {
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [enrollmentData, setEnrollmentData] = useState<any>(null);
-  const [selfie, setSelfie] = useState<string | null>(null);
   const [hotels, setHotels] = useState<any[]>([]);
-  const [rooms, setRooms] = useState<any[]>([]);
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const [cameraActive, setCameraActive] = useState(false);
+  const [rooms, setRooms] = useState<any[]>([]);;
 
   const [formData, setFormData] = useState({
     fname: "",
@@ -54,40 +51,6 @@ const Enrollment = () => {
     if (data) setRooms(data);
   };
 
-  const startCamera = async () => {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-        setCameraActive(true);
-      }
-    } catch (error) {
-      toast({
-        title: "Camera Error",
-        description: "Unable to access camera. Please check permissions.",
-        variant: "destructive"
-      });
-    }
-  };
-
-  const captureSelfie = () => {
-    if (videoRef.current) {
-      const canvas = document.createElement("canvas");
-      canvas.width = videoRef.current.videoWidth;
-      canvas.height = videoRef.current.videoHeight;
-      const ctx = canvas.getContext("2d");
-      if (ctx) {
-        ctx.drawImage(videoRef.current, 0, 0);
-        const dataUrl = canvas.toDataURL("image/jpeg");
-        setSelfie(dataUrl);
-        // Stop camera
-        const stream = videoRef.current.srcObject as MediaStream;
-        stream?.getTracks().forEach(track => track.stop());
-        setCameraActive(false);
-      }
-    }
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -105,8 +68,7 @@ const Enrollment = () => {
             expiryDate: null
           },
           hotelId: formData.hotelId,
-          roomId: formData.roomId,
-          selfieBase64: selfie
+          roomId: formData.roomId
         }
       });
 
@@ -297,33 +259,6 @@ const Enrollment = () => {
                 </div>
               </div>
 
-              {/* Selfie Capture */}
-              <div className="space-y-4">
-                <h3 className="font-semibold text-foreground">Capture Selfie</h3>
-                {!selfie && !cameraActive && (
-                  <Button type="button" onClick={startCamera} variant="outline" className="w-full">
-                    <Camera className="h-4 w-4 mr-2" />
-                    Start Camera
-                  </Button>
-                )}
-                {cameraActive && (
-                  <div className="space-y-2">
-                    <video ref={videoRef} autoPlay className="w-full rounded-lg" />
-                    <Button type="button" onClick={captureSelfie} className="w-full">
-                      Capture Photo
-                    </Button>
-                  </div>
-                )}
-                {selfie && (
-                  <div className="space-y-2">
-                    <img src={selfie} alt="Selfie" className="w-full rounded-lg" />
-                    <Button type="button" onClick={() => { setSelfie(null); startCamera(); }} variant="outline" className="w-full">
-                      Retake Photo
-                    </Button>
-                  </div>
-                )}
-              </div>
-
               {/* Hotel & Room Selection */}
               <div className="space-y-4">
                 <h3 className="font-semibold text-foreground">Booking Details</h3>
@@ -371,7 +306,7 @@ const Enrollment = () => {
                 )}
               </div>
 
-              <Button type="submit" className="w-full" disabled={loading || !selfie}>
+              <Button type="submit" className="w-full" disabled={loading}>
                 {loading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
                 Complete Enrollment
               </Button>
