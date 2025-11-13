@@ -85,7 +85,7 @@ const Index = () => {
           </Link>
         </div>
 
-        <div className="mt-16 max-w-3xl mx-auto">
+        <div className="mt-16 max-w-3xl mx-auto space-y-6">
           <Card className="bg-card/50 backdrop-blur-sm">
             <CardHeader>
               <CardTitle className="text-foreground">How It Works</CardTitle>
@@ -124,6 +124,23 @@ const Index = () => {
                   </p>
                 </div>
               </div>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-card/50 backdrop-blur-sm border-primary/20">
+            <CardHeader>
+              <CardTitle className="text-foreground">Hotel Partners</CardTitle>
+              <CardDescription>
+                Register your hotel to join the HotelCheck network
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Link to="/hotel-enrollment">
+                <Button className="w-full" size="lg">
+                  <Hotel className="h-5 w-5 mr-2" />
+                  Register Your Hotel
+                </Button>
+              </Link>
             </CardContent>
           </Card>
         </div>

@@ -39,7 +39,12 @@ const Reception = () => {
       });
       if (error) throw error;
       setResult(data);
-      toast({ title: "Checkout Successful!", description: data.message });
+      toast({ title: "Checkout Initiated!", description: data.message });
+      
+      // Redirect to payment page with billing details
+      if (data.success && data.data.billingId) {
+        window.location.href = `/payment?billingId=${data.data.billingId}&stayId=${data.data.stayId}`;
+      }
     } catch (error: any) {
       toast({ title: "Checkout Failed", description: error.message, variant: "destructive" });
     } finally {
