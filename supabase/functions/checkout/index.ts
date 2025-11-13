@@ -1,6 +1,13 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { decode } from "https://deno.land/std@0.192.0/encoding/base64.ts";
+
+// Helper to add padding to base64 string
+function addBase64Padding(str: string): string {
+  while (str.length % 4 !== 0) {
+    str += '=';
+  }
+  return str;
+}
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -52,13 +59,15 @@ serve(async (req) => {
     );
 
     const signatureInput = `${headerB64}.${payloadB64}`;
-    const signatureBytes = decode(signatureB64 + '==');
-    const signatureArray = new Uint8Array(signatureBytes);
+    
+    // Decode signature with proper padding
+    const paddedSignature = addBase64Padding(signatureB64);
+    const signatureBytes = Uint8Array.from(atob(paddedSignature), c => c.charCodeAt(0));
     
     const isValid = await crypto.subtle.verify(
       'HMAC',
       key,
-      signatureArray,
+      signatureBytes,
       encoder.encode(signatureInput)
     );
 
@@ -66,8 +75,10 @@ serve(async (req) => {
       throw new Error('Invalid JWT signature');
     }
 
-    const payloadBytes = decode(payloadB64 + '==');
-    const payload = JSON.parse(new TextDecoder().decode(payloadBytes));
+    // Decode and parse payload with proper padding
+    const paddedPayload = addBase64Padding(payloadB64);
+    const payloadJson = atob(paddedPayload);
+    const payload = JSON.parse(payloadJson);
 
     console.log('JWT verified for stayId:', payload.stayId);
 
