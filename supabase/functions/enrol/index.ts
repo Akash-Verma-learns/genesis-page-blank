@@ -40,30 +40,68 @@ serve(async (req) => {
     const birthDate = new Date(dob);
     const age = Math.floor((Date.now() - birthDate.getTime()) / (365.25 * 24 * 60 * 60 * 1000));
 
-    // Create Guest
-    const { data: guest, error: guestError } = await supabase
+    // Check if guest already exists by email
+    const { data: existingGuest } = await supabase
       .from('guest')
-      .insert({
-        fname,
-        mname,
-        lname,
-        dob,
-        age,
-        nationality,
-        address,
-        emailid: emailID,
-        main_phone,
-        emergency_contacts: emergency_contacts || {}
-      })
-      .select()
-      .single();
+      .select('guestid')
+      .eq('emailid', emailID)
+      .maybeSingle();
 
-    if (guestError) {
-      console.error('Guest creation error:', guestError);
-      throw new Error(`Failed to create guest: ${guestError.message}`);
+    let guest;
+    
+    if (existingGuest) {
+      // Update existing guest
+      const { data: updatedGuest, error: updateError } = await supabase
+        .from('guest')
+        .update({
+          fname,
+          mname,
+          lname,
+          dob,
+          age,
+          nationality,
+          address,
+          main_phone,
+          emergency_contacts: emergency_contacts || {}
+        })
+        .eq('guestid', existingGuest.guestid)
+        .select()
+        .single();
+
+      if (updateError) {
+        console.error('Guest update error:', updateError);
+        throw new Error(`Failed to update guest: ${updateError.message}`);
+      }
+      
+      guest = updatedGuest;
+      console.log('Guest updated:', guest.guestid);
+    } else {
+      // Create new guest
+      const { data: newGuest, error: guestError } = await supabase
+        .from('guest')
+        .insert({
+          fname,
+          mname,
+          lname,
+          dob,
+          age,
+          nationality,
+          address,
+          emailid: emailID,
+          main_phone,
+          emergency_contacts: emergency_contacts || {}
+        })
+        .select()
+        .single();
+
+      if (guestError) {
+        console.error('Guest creation error:', guestError);
+        throw new Error(`Failed to create guest: ${guestError.message}`);
+      }
+
+      guest = newGuest;
+      console.log('Guest created:', guest.guestid);
     }
-
-    console.log('Guest created:', guest.guestid);
 
     // Upload selfie if provided
     if (selfieBase64) {
