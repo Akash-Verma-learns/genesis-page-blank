@@ -118,11 +118,10 @@ serve(async (req) => {
 
     console.log('Billing calculation:', { durationDays, roomAmount, taxAmount, finalAmount });
 
-    // Update StayLog
+    // Update StayLog with checkout time and amount (keep status for payment flow)
     const { error: updateError } = await supabase
       .from('staylog')
       .update({
-        status: 'Checked-Out',
         checkouttime: checkOutTime.toISOString(),
         totalamount: finalAmount
       })
@@ -156,42 +155,26 @@ serve(async (req) => {
       throw new Error('Failed to create billing record');
     }
 
-    // Create Payment record (pending)
-    const { data: payment, error: paymentError } = await supabase
-      .from('payment')
-      .insert({
-        billingid: billing.billingid,
-        amount: finalAmount,
-        method: 'Cash',
-        status: 'Pending',
-        paymentdate: null
-      })
-      .select()
-      .single();
-
-    if (paymentError) {
-      console.error('Payment creation error:', paymentError);
-    }
-
-    console.log('Checkout successful for:', stayLog.guest.emailid);
+    console.log('Checkout initiated for:', stayLog.guest.emailid);
 
     return new Response(
       JSON.stringify({
         success: true,
-        stayId: stayLog.stayid,
-        guestName: `${stayLog.guest.fname} ${stayLog.guest.lname}`,
-        hotelName: stayLog.hotel.name,
-        roomNumber: stayLog.room.roomnumber,
-        checkInTime: stayLog.checkintime,
-        checkOutTime: checkOutTime.toISOString(),
-        durationDays: durationDays,
-        roomRate: pricePerNight,
-        roomAmount: roomAmount,
-        taxAmount: taxAmount,
-        finalAmount: finalAmount,
-        billingId: billing.billingid,
-        paymentId: payment?.paymentid,
-        message: 'Checkout successful! Thank you for your stay.'
+        message: 'Checkout initiated - proceed to payment',
+        data: {
+          stayId: stayLog.stayid,
+          guestName: `${stayLog.guest.fname} ${stayLog.guest.lname}`,
+          hotelName: stayLog.hotel.name,
+          roomNumber: stayLog.room.roomnumber,
+          checkInTime: stayLog.checkintime,
+          checkOutTime: checkOutTime.toISOString(),
+          durationDays: durationDays,
+          roomRate: pricePerNight,
+          roomAmount: roomAmount,
+          taxAmount: taxAmount,
+          finalAmount: finalAmount,
+          billingId: billing.billingid
+        }
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
